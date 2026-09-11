@@ -8,11 +8,10 @@
 
 /** Fuellfarben je Steinformat (hell genug fuer Beschriftung und Graustufendruck). */
 const FARBEN = {
-  S: '#f5ead8',
-  M: '#ecdcc1',
-  L: '#dfcaa6',
-  XL: '#cfb58d',
-  XXL: '#bd9f74',
+  '40/14': '#bb9c70',
+  '30/14': '#cfb58d',
+  '30/7': '#e2cda9',
+  '20/7': '#f2e5cd',
 };
 const FARBE_FALLBACK = '#e3d5bd';
 const FARBE_SCHNITT = '#f0cfc6';
@@ -65,17 +64,19 @@ export function zeichneAnsicht(schenkel, opts = {}) {
     const y = padO + (schenkel.hoehe - lage.y - lage.hoehe);
 
     for (const stein of lage.steine) {
+      // dy = Höhe über der Bandunterkante (7-cm-Steine in einem 14-cm-Band)
+      const sy = padO + (schenkel.hoehe - lage.y - (stein.dy || 0) - stein.h);
       const farbe = stein.zuschnitt ? `url(#${id})` : (FARBEN[stein.steinId] || FARBE_FALLBACK);
-      teile.push(`<rect x="${x0 + stein.x}" y="${y}" width="${stein.l}" height="${lage.hoehe}"
+      teile.push(`<rect x="${x0 + stein.x}" y="${sy}" width="${stein.l}" height="${stein.h}"
         fill="${farbe}" stroke="#4a4034" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`);
-      teile.push(...beschriftung(stein, lage, x0, y));
+      teile.push(...beschriftung(stein, x0, sy));
     }
 
     // Lagenbeschriftung links: Nummer (mit Marke fuer Sonderlagen) und Oberkante
     const marke = lage.quelle === 'unten' ? ' \u25b2' : lage.quelle === 'oben' ? ' \u25bc' : '';
     const mitteY = y + lage.hoehe / 2 + 18;
     teile.push(`<text x="${x0 - 80}" y="${mitteY}" text-anchor="end"
-      font-size="50" fill="#5b5044">L${lage.index + 1}${marke}</text>`);
+      font-size="50" fill="#5b5044">B${lage.index + 1}${marke}</text>`);
     teile.push(`<text x="${x0 - 230}" y="${mitteY}" text-anchor="end"
       font-size="40" fill="#8a7f70">${((lage.y + lage.hoehe) / 10).toFixed(1).replace('.', ',')}</text>`);
 
@@ -91,7 +92,7 @@ export function zeichneAnsicht(schenkel, opts = {}) {
 
   // Spaltenkoepfe der Lagenbeschriftung
   teile.push(`<text x="${x0 - 80}" y="${padO - 80}" text-anchor="end" font-size="40"
-    fill="#a2978a">Lage</text>`);
+    fill="#a2978a">Band</text>`);
   teile.push(`<text x="${x0 - 230}" y="${padO - 80}" text-anchor="end" font-size="40"
     fill="#a2978a">OK cm</text>`);
 
@@ -124,11 +125,11 @@ function passendeSchrift(text, platz, max, min) {
   return Math.max(min, Math.min(max, (platz - 24) / (text.length * 0.58)));
 }
 
-function beschriftung(stein, lage, x0, y) {
+function beschriftung(stein, x0, y) {
   const out = [];
   const mitteX = x0 + stein.x + stein.l / 2;
-  const mitteY = y + lage.hoehe / 2;
-  const klein = lage.hoehe < 100;
+  const mitteY = y + stein.h / 2;
+  const klein = stein.h < 100;
 
   if (stein.zuschnitt) {
     const text = (stein.l / 10).toFixed(1).replace('.', ',');
@@ -143,7 +144,7 @@ function beschriftung(stein, lage, x0, y) {
       }
     } else {
       // Schmales Passstueck: Mass hochkant eintragen
-      const hoch = passendeSchrift(text, lage.hoehe, 38, 16);
+      const hoch = passendeSchrift(text, stein.h, 38, 16);
       out.push(`<text x="${mitteX}" y="${mitteY}" text-anchor="middle" font-size="${hoch}"
         font-weight="600" fill="#8c3a28" transform="rotate(-90 ${mitteX} ${mitteY})">${text}</text>`);
     }
@@ -151,8 +152,9 @@ function beschriftung(stein, lage, x0, y) {
   }
 
   if (stein.l < 130) return out;
-  out.push(`<text x="${mitteX}" y="${mitteY + (klein ? 14 : 18)}" text-anchor="middle"
-    font-size="${klein ? 42 : 50}" fill="#4a4034">${esc(stein.steinId)}</text>`);
+  const label = String(stein.l / 10);
+  out.push(`<text x="${mitteX}" y="${mitteY + (klein ? 12 : 16)}" text-anchor="middle"
+    font-size="${klein ? 38 : 46}" fill="#4a4034">${label}</text>`);
   return out;
 }
 
@@ -224,8 +226,9 @@ export function legende(positionen, katalog) {
   const eintraege = positionen.map((p) => {
     const stein = katalog[p.steinId];
     return `<li><span class="swatch" style="background:${FARBEN[p.steinId] || FARBE_FALLBACK}"></span>
-      <strong>${esc(p.steinId)}</strong> ${esc(stein.name)} &middot; ${stein.l / 10} &times; ${stein.d / 10} &times; ${stein.h / 10} cm</li>`;
+      <strong>${esc(stein.name)}</strong> ${stein.l / 10} &times; ${stein.d / 10} &times; ${stein.h / 10} cm</li>`;
   });
   eintraege.push('<li><span class="swatch swatch--schnitt"></span> Zuschnitt (Zahl = fertige L&auml;nge in cm)</li>');
+  eintraege.push('<li>Zahlen in den Steinen = Ansichtsl&auml;nge in cm</li>');
   return `<ul class="legende">${eintraege.join('')}</ul>`;
 }

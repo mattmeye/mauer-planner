@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mauer-Konfigurator &middot; EHL Antik</title>
+<title>Mauer-Konfigurator &middot; EHL CityAntik</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f7f3ec'/%3E%3Cg fill='%23bd9f74' stroke='%234a4034' stroke-width='1'%3E%3Crect x='3' y='6' width='12' height='7'/%3E%3Crect x='17' y='6' width='12' height='7'/%3E%3Crect x='3' y='15' width='8' height='7'/%3E%3Crect x='13' y='15' width='16' height='7'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
@@ -12,7 +12,7 @@
 <header class="kopf no-print">
   <div class="kopf-titel">
     <h1>Mauer-Konfigurator</h1>
-    <p>EHL Antik-Serie &middot; Verlegeart 6016</p>
+    <p>EHL CityAntik-Mauer &middot; Aufbauschema 6016</p>
   </div>
   <div class="kopf-aktionen">
     <select id="planListe" aria-label="Gespeicherte Plaene"></select>
@@ -59,7 +59,7 @@
       <button type="button" id="btnVerbandEditor" class="leise">Verband bearbeiten</button>
       <div id="verbandEditor" class="editor" hidden></div>
       <label class="feld">
-        <span>Startlage im Verband</span>
+        <span>Startband im Verband</span>
         <input type="number" id="startLage" min="0" max="20" step="1">
       </label>
     </fieldset>
@@ -80,7 +80,7 @@
           <span>H&ouml;he festlegen &uuml;ber</span>
           <select data-feld="modus">
             <option value="hoehe">Zielh&ouml;he (cm)</option>
-            <option value="lagen">Lagenzahl</option>
+            <option value="lagen">Anzahl B&auml;nder</option>
           </select>
         </label>
         <label class="feld">
@@ -102,7 +102,7 @@
           <span>H&ouml;he festlegen &uuml;ber</span>
           <select data-feld="modus">
             <option value="hoehe">Zielh&ouml;he (cm)</option>
-            <option value="lagen">Lagenzahl</option>
+            <option value="lagen">Anzahl B&auml;nder</option>
           </select>
         </label>
         <label class="feld">
@@ -181,10 +181,13 @@
     <details class="details">
       <summary>Hinweise zu den Daten</summary>
       <p class="beschreibung">
-        Steinformate der EHL Antik-Serie: 20/30/40 cm L&auml;nge, 20 cm Tiefe,
-        7 bzw. 14 cm H&ouml;he. Die Lagenfolge der Verlegeart 6016 ist als
-        Vorlage hinterlegt und l&auml;sst sich &uuml;ber <em>Verband bearbeiten</em>
-        an das EHL-Verlegebeispiel anpassen und als eigener Verband speichern.
+        Grundlage ist das <strong>EHL-Verlegebeispiel 6016</strong>
+        (CityAntik-Mauer, &bdquo;Wilder Aufbau mit 4 Formaten&ldquo;, DIY):
+        vier Formate (40/20/14, 30/20/14, 30/20/7, 20/20/7 cm) in acht
+        B&auml;ndern (7/14/7/14/7/14/7/14 cm = 84 cm) mit 120 cm
+        Horizontalperiode. Die B&auml;nder sind aus der Zeichnung des
+        Datenblatts &uuml;bernommen und geben den dort gezeichneten
+        Ausschnitt Stein f&uuml;r Stein wieder.
         Gewichtsangaben sind rechnerische Sch&auml;tzungen
         (Volumen &times; 2350 kg/m&sup3;). Ma&szlig;geblich bleiben die
         Herstellerangaben.
@@ -225,7 +228,7 @@
     </section>
 
     <section class="block seitenumbruch">
-      <h3>Lagenaufbau</h3>
+      <h3>Bandaufbau</h3>
       <div id="lagenTabelle"></div>
     </section>
 

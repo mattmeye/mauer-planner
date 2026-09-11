@@ -1,13 +1,15 @@
 /**
- * Bedienoberflaeche des Mauer-Konfigurators.
+ * Bedienoberfläche des Mauer-Konfigurators.
  *
- * Haelt die Konfiguration im Zustand `state`, rechnet bei jeder Aenderung das
+ * Hält die Konfiguration im Zustand `state`, rechnet bei jeder Änderung das
  * komplette Modell neu durch (Geometrie -> Kalkulation -> Darstellung) und
  * sichert den Entwurf im Browser-Speicher.
  */
 
-import { STEINE, steinMap } from '../data/catalog.js';
-import { VERBAENDE, pruefeVerband } from '../data/patterns.js';
+import { STEINE, steinMap, formatText } from '../data/catalog.js';
+import {
+  VERBAENDE, pruefeVerband, elementeAlsText, elementeAusText,
+} from '../data/patterns.js';
 import { standardKonfig, baueMauer } from '../core/wall.js';
 import { kalkuliere, schnittUebersicht } from '../core/calc.js';
 import { zeichneAnsicht, zeichneDraufsicht, legende, esc, cm } from './svg.js';
@@ -29,9 +31,7 @@ function zahl(el, fallback = 0) {
   return Number.isFinite(wert) ? wert : fallback;
 }
 
-/** cm-Eingabe -> mm */
 const zuMm = (wert) => Math.round(wert * 10);
-/** mm -> cm-Anzeige */
 const zuCm = (wert) => Math.round(wert) / 10;
 
 function zahlFmt(wert, stellen = 0) {
@@ -50,7 +50,7 @@ function zeigeHinweis(text, art = 'info') {
   zeigeHinweis.timer = setTimeout(() => { box.hidden = true; }, 4000);
 }
 
-/** Ergaenzt fehlende Felder aelterer bzw. importierter Plaene. */
+/** Ergänzt fehlende Felder älterer bzw. importierter Pläne. */
 function migriere(konfig) {
   const basis = standardKonfig();
   const k = { ...basis, ...konfig };
@@ -59,10 +59,14 @@ function migriere(konfig) {
     unten: { ...basis.abschluss.unten, ...(konfig.abschluss?.unten || {}) },
     oben: { ...basis.abschluss.oben, ...(konfig.abschluss?.oben || {}) },
   };
+  // Formate aus einer früheren Katalogfassung verwerfen
+  for (const seite of ['unten', 'oben']) {
+    k.abschluss[seite].steine = (k.abschluss[seite].steine || []).filter((id) => katalog[id]);
+    if (!k.abschluss[seite].steine.length) k.abschluss[seite].steine = ['40/14'];
+  }
   return k;
 }
 
-/** Alle Verbandvorlagen (mitgeliefert + eigene). */
 function alleVerbaende() {
   return [...VERBAENDE, ...store.eigeneVerbaende()];
 }
@@ -70,15 +74,14 @@ function alleVerbaende() {
 /** Der aktuell wirksame Verband - ggf. die im Plan abgelegte Abwandlung. */
 function aktiverVerband() {
   if (state.konfig.verband) return state.konfig.verband;
-  const gefunden = alleVerbaende().find((v) => v.id === state.konfig.verbandId);
-  return gefunden || VERBAENDE[0];
+  return alleVerbaende().find((v) => v.id === state.konfig.verbandId) || VERBAENDE[0];
 }
 
 /* ------------------------------------------------- Formular <-> Konfiguration */
 
 function fuelleAuswahlfelder() {
   const optionen = STEINE
-    .map((s) => `<option value="${s.id}">${esc(s.id)} &ndash; ${esc(s.name)} (${s.l / 10}&times;${s.d / 10}&times;${s.h / 10} cm)</option>`)
+    .map((s) => `<option value="${esc(s.id)}">${esc(s.name)} &ndash; ${formatText(s)}</option>`)
     .join('');
   $$('[data-abschluss] [data-feld="stein"]').forEach((sel) => { sel.innerHTML = optionen; });
 }
@@ -120,7 +123,7 @@ function formularAusKonfig() {
     $('[data-feld="name"]', box).value = s.name;
     $('[data-feld="laenge"]', box).value = zuCm(s.laenge);
     $('[data-feld="modus"]', box).value = s.modus;
-    $('[data-rolle="wertLabel"]', box).textContent = s.modus === 'lagen' ? 'Lagenzahl' : 'Zielhöhe (cm)';
+    $('[data-rolle="wertLabel"]', box).textContent = s.modus === 'lagen' ? 'Anzahl Bänder' : 'Zielhöhe (cm)';
     $('[data-feld="wert"]', box).value = s.modus === 'lagen' ? s.lagen : zuCm(s.zielHoehe);
     $('[data-feld="wert"]', box).step = s.modus === 'lagen' ? '1' : '0.5';
   });
@@ -129,7 +132,7 @@ function formularAusKonfig() {
     const def = k.abschluss[box.dataset.abschluss];
     $('[data-feld="modus"]', box).value = def.modus;
     const steinSel = $('[data-feld="stein"]', box);
-    steinSel.value = def.steine?.[0] || 'XXL';
+    steinSel.value = def.steine?.[0] || '40/14';
     steinSel.disabled = def.modus === 'verband';
   });
 
@@ -157,7 +160,7 @@ function konfigAusFormular() {
     s.laenge = Math.max(100, zuMm(zahl($('[data-feld="laenge"]', box), 100)));
     s.modus = $('[data-feld="modus"]', box).value;
     const wert = zahl($('[data-feld="wert"]', box), 1);
-    if (s.modus === 'lagen') s.lagen = Math.min(60, Math.max(1, Math.round(wert)));
+    if (s.modus === 'lagen') s.lagen = Math.min(80, Math.max(1, Math.round(wert)));
     else s.zielHoehe = Math.max(10, zuMm(wert));
   });
 
@@ -174,7 +177,7 @@ function renderVerbandEditor() {
   const box = $('#verbandEditor');
   if (box.hidden) return;
   const verband = aktiverVerband();
-  const eigen = Boolean(store.eigeneVerbaende().find((v) => v.id === state.konfig.verbandId));
+  const eigen = store.eigeneVerbaende().some((v) => v.id === state.konfig.verbandId);
 
   box.innerHTML = `
     <label class="feld feld--breit">
@@ -184,20 +187,32 @@ function renderVerbandEditor() {
     <ol class="lagen-editor">
       ${verband.lagen.map((lage, i) => `
         <li>
-          <span class="lagen-nr">Lage ${i + 1}</span>
-          <input type="text" data-lage="${i}" value="${esc(lage.steine.join(' '))}"
-                 aria-label="Steinfolge Lage ${i + 1}">
-          <button type="button" class="leise" data-aktion="entfernen" data-lage="${i}"
-                  title="Lage entfernen">&times;</button>
+          <div class="band-kopf">
+            <span class="lagen-nr">Band ${i + 1}</span>
+            <select data-lage="${i}" data-feld="hoehe" aria-label="Bandhöhe Band ${i + 1}">
+              <option value="70"${lage.hoehe === 70 ? ' selected' : ''}>7 cm</option>
+              <option value="140"${lage.hoehe === 140 ? ' selected' : ''}>14 cm</option>
+            </select>
+            <button type="button" class="leise" data-aktion="entfernen" data-lage="${i}"
+                    title="Band entfernen">&times;</button>
+          </div>
+          <label class="band-feld"><span>Anfang</span>
+            <input type="text" data-lage="${i}" data-feld="anfang"
+                   value="${esc(elementeAlsText(lage.anfang))}" placeholder="(leer)"></label>
+          <label class="band-feld"><span>Muster</span>
+            <input type="text" data-lage="${i}" data-feld="muster"
+                   value="${esc(elementeAlsText(lage.muster))}"></label>
         </li>`).join('')}
     </ol>
     <p class="beschreibung">
-      Formate durch Leerzeichen trennen (${STEINE.map((s) => s.id).join(', ')}).
-      Die Folge wird je Lage so lange wiederholt, bis die Schenkell&auml;nge erreicht ist.
-      Innerhalb einer Lage m&uuml;ssen alle Formate dieselbe H&ouml;he haben.
+      Formate: ${STEINE.map((s) => esc(s.id)).join(', ')} (L&auml;nge/H&ouml;he in cm), durch
+      Leerzeichen getrennt. <em>Anfang</em> wird einmalig an der Ecke verlegt,
+      <em>Muster</em> wiederholt sich bis zum freien Ende.
+      Zwei &uuml;bereinanderliegende Reihen 7-cm-Steine in einem 14-cm-Band schreibt man als
+      <code>[20/7 30/7 | 30/7 20/7]</code> (unten&nbsp;|&nbsp;oben).
     </p>
     <div class="editor-aktionen">
-      <button type="button" data-aktion="hinzufuegen">+ Lage</button>
+      <button type="button" data-aktion="hinzufuegen">+ Band</button>
       <button type="button" data-aktion="speichern" class="primaer">Als eigenen Verband speichern</button>
       <button type="button" data-aktion="zuruecksetzen">Auf Vorlage zur&uuml;cksetzen</button>
       ${eigen ? '<button type="button" data-aktion="loeschen">Eigenen Verband l&ouml;schen</button>' : ''}
@@ -222,14 +237,24 @@ function bindeEditor() {
       verbandKopie().name = ziel.value;
       return;
     }
-    if (ziel.dataset.lage !== undefined) {
-      const verband = verbandKopie();
-      const index = Number(ziel.dataset.lage);
-      verband.lagen[index] = {
-        steine: ziel.value.toUpperCase().split(/[\s,;]+/).filter(Boolean),
-      };
-      rendere();
+    if (ziel.dataset.lage === undefined) return;
+    const verband = verbandKopie();
+    const lage = verband.lagen[Number(ziel.dataset.lage)];
+    const feld = ziel.dataset.feld;
+
+    if (feld === 'hoehe') {
+      lage.hoehe = Number(ziel.value);
+    } else {
+      try {
+        lage[feld] = elementeAusText(ziel.value);
+        ziel.setCustomValidity('');
+      } catch (fehler) {
+        ziel.setCustomValidity(fehler.message);
+        zeigeHinweis(fehler.message, 'warnung');
+        return;
+      }
     }
+    rendere();
   });
 
   box.addEventListener('click', (ev) => {
@@ -239,11 +264,11 @@ function bindeEditor() {
 
     switch (knopf.dataset.aktion) {
       case 'hinzufuegen':
-        verband.lagen.push({ steine: ['XXL', 'XL', 'L'] });
+        verband.lagen.push({ hoehe: 140, anfang: [], muster: ['40/14', '30/14'] });
         break;
       case 'entfernen':
         if (verband.lagen.length <= 1) {
-          zeigeHinweis('Ein Verband braucht mindestens eine Lage.', 'warnung');
+          zeigeHinweis('Ein Verband braucht mindestens ein Band.', 'warnung');
           return;
         }
         verband.lagen.splice(Number(knopf.dataset.lage), 1);
@@ -304,7 +329,7 @@ function renderKennzahlen(mauer, kalk) {
       <dl>
         <div><dt>L&auml;nge</dt><dd>${cm(s.laenge)}</dd></div>
         <div><dt>H&ouml;he</dt><dd>${cm(s.hoehe)} ${abw}</dd></div>
-        <div><dt>Lagen</dt><dd>${s.lagenAnzahl}</dd></div>
+        <div><dt>B&auml;nder</dt><dd>${s.lagenAnzahl}</dd></div>
         <div><dt>Steine</dt><dd>${stats.steine}</dd></div>
         <div><dt>Zuschnitte</dt><dd>${stats.schnitte}</dd></div>
         <div><dt>Ansichtsfl&auml;che</dt><dd>${zahlFmt(stats.flaeche, 2)} m&sup2;</dd></div>
@@ -345,35 +370,46 @@ function renderAnsichten(mauer) {
 
 function renderBedarf(kalk) {
   const zeilen = kalk.positionen.map((p) => [
-    `<strong>${esc(p.steinId)}</strong>`,
-    esc(p.name),
+    `<strong>${esc(katalog[p.steinId].name)}</strong>`,
     p.format,
     p.ganz,
     p.zuschnitte + (p.ausRest ? ` <span class="leise-text">(${p.ausRest} aus Rest)</span>` : ''),
     `<strong>${p.verbrauch}</strong>`,
     p.bestellmenge,
+    zahlFmt(p.jeQm, 1),
+    p.richtwertSystem === null ? '&ndash;' : zahlFmt(p.richtwertSystem, 1),
     `${zahlFmt(p.gewicht, 0)} kg`,
   ]);
+
   $('#bedarf').innerHTML = tabelle(
-    ['Format', 'Bezeichnung', 'L&times;T&times;H', 'ganz verlegt', 'Zuschnitte', 'Steine n&ouml;tig', `inkl. ${zahlFmt(state.konfig.verschnitt, 0)} %`, 'Gewicht ca.'],
+    ['Format', 'L&times;T&times;H', 'ganz verlegt', 'Zuschnitte', 'Steine n&ouml;tig',
+      `inkl. ${zahlFmt(state.konfig.verschnitt, 0)} %`, 'Stk/m&sup2;', 'EHL Stk/m&sup2;', 'Gewicht ca.'],
     zeilen,
-    ['Summe', '', '',
+    ['Summe', '',
       kalk.positionen.reduce((s, p) => s + p.ganz, 0),
       kalk.positionen.reduce((s, p) => s + p.zuschnitte, 0),
       `<strong>${kalk.summe.verbrauch}</strong>`,
-      kalk.summe.bestellmenge,
+      kalk.summe.bestellmenge, '', '',
       `${zahlFmt(kalk.summe.gewicht, 0)} kg`],
   );
-  $('#legendeBox').innerHTML = legende(kalk.positionen, katalog);
+
+  const verband = aktiverVerband();
+  const diy = verband.bedarfJeQm
+    ? `<p class="beschreibung">EHL-Richtwerte des Datenblatts: Systemverband
+       ${STEINE.filter((s) => verband.bedarfSystem?.[s.id]).map((s) => `${s.l / 10}/${s.h / 10} ca. ${zahlFmt(verband.bedarfSystem[s.id], 1)}`).join(' &middot; ')} Stk/m&sup2;;
+       DIY-Ausschnitt ${STEINE.filter((s) => verband.bedarfJeQm[s.id]).map((s) => `${s.l / 10}/${s.h / 10} ca. ${zahlFmt(verband.bedarfJeQm[s.id], 1)}`).join(' &middot; ')} Stk/m&sup2;.</p>`
+    : '';
+  $('#legendeBox').innerHTML = legende(kalk.positionen, katalog) + diy;
 }
 
 function renderSchnitte(kalk) {
   if (!kalk.schnitte.length) {
-    $('#schnitte').innerHTML = '<p class="beschreibung">Kein Zuschnitt erforderlich &ndash; alle Lagen gehen im Steinraster auf.</p>';
+    $('#schnitte').innerHTML = '<p class="beschreibung">Kein Zuschnitt erforderlich &ndash; alle B&auml;nder gehen im Steinraster auf.</p>';
     return;
   }
   const uebersicht = schnittUebersicht(kalk.schnitte).map((u) => [
-    `<strong>${esc(u.steinId)}</strong>`,
+    `<strong>${esc(katalog[u.steinId].name)}</strong>`,
+    esc(u.steinId),
     cm(u.laenge),
     `aus ${katalog[u.steinId].l / 10} cm`,
     u.anzahl,
@@ -382,7 +418,7 @@ function renderSchnitte(kalk) {
 
   const detail = kalk.schnitte.map((s) => [
     esc(s.schenkel),
-    `L${s.lage}`,
+    `B${s.lage}`,
     esc(s.steinId),
     cm(s.laenge),
     s.herkunft === 'rest' ? 'aus Rest&shy;st&uuml;ck' : 'neuer Stein',
@@ -390,9 +426,9 @@ function renderSchnitte(kalk) {
   ]);
 
   $('#schnitte').innerHTML = `
-    ${tabelle(['Format', 'Zuschnittl&auml;nge', 'Ausgangsl&auml;nge', 'Anzahl', 'davon aus Rest'], uebersicht)}
+    ${tabelle(['Format', 'Kurz', 'Zuschnittl&auml;nge', 'Ausgangsl&auml;nge', 'Anzahl', 'davon aus Rest'], uebersicht)}
     <details class="details"><summary>Alle Zuschnitte einzeln (${kalk.schnitte.length})</summary>
-      ${tabelle(['Schenkel', 'Lage', 'Format', 'Zuschnitt', 'Herkunft', 'Position ab Ecke'], detail)}
+      ${tabelle(['Schenkel', 'Band', 'Format', 'Zuschnitt', 'Herkunft', 'Position ab Ecke'], detail)}
     </details>`;
 }
 
@@ -409,23 +445,34 @@ function renderReste(kalk) {
   );
 }
 
+/** Steinfolge eines Bandes als Text, getrennt nach unterer und oberer Reihe. */
+function steinfolgeText(lage) {
+  const zeige = (stein) => (stein.zuschnitt
+    ? `<span class="zuschnitt" title="Zuschnitt aus ${esc(stein.steinId)}">${zahlFmt(stein.l / 10, 1)}&#9986;</span>`
+    : String(stein.l / 10));
+  const unten = lage.steine.filter((s) => !s.dy).sort((a, b) => a.x - b.x);
+  const oben = lage.steine.filter((s) => s.dy).sort((a, b) => a.x - b.x);
+  const zeilen = [unten.map(zeige).join(' &middot; ')];
+  if (oben.length) zeilen.push(`<span class="leise-text">obere Reihe:</span> ${oben.map(zeige).join(' &middot; ')}`);
+  return zeilen.join('<br>');
+}
+
 function renderLagen(mauer) {
   $('#lagenTabelle').innerHTML = mauer.schenkel.map((s) => {
     const zeilen = [...s.lagen].reverse().map((lage) => [
-      `L${lage.index + 1}`,
+      `B${lage.index + 1}`,
       lage.quelle === 'verband'
-        ? `Verband, Lage ${lage.verbandIndex + 1}`
+        ? `Verband, Band ${lage.verbandIndex + 1}`
         : `Sonderlage ${lage.quelle === 'unten' ? 'unten' : 'oben'}`,
       cm(lage.y + lage.hoehe),
       cm(lage.hoehe),
       lage.offset ? `${cm(lage.offset)} zur&uuml;ck` : 'an der Ecke',
       cm(lage.nutzlaenge),
-      lage.steine.map((st) => (st.zuschnitt
-        ? `<span class="zuschnitt" title="Zuschnitt">${esc(st.steinId)}&rarr;${cm(st.l)}</span>`
-        : esc(st.steinId))).join(' &middot; '),
+      steinfolgeText(lage),
     ]);
     return `<h4>${esc(s.name)}</h4>${tabelle(
-      ['Lage', 'Herkunft', 'Oberkante', 'H&ouml;he', 'Beginn', 'Nutzl&auml;nge', 'Steinfolge (von der Ecke aus)'],
+      ['Band', 'Herkunft', 'Oberkante', 'H&ouml;he', 'Beginn', 'Nutzl&auml;nge',
+        'Steinl&auml;ngen in cm (von der Ecke aus)'],
       zeilen,
     )}`;
   }).join('');
@@ -433,14 +480,16 @@ function renderLagen(mauer) {
 
 function renderDruckkopf(mauer) {
   const k = state.konfig;
+  const verband = aktiverVerband();
   $('#druckTitel').textContent = k.name;
   $('#druckMeta').textContent = [
     k.form === 'ecke' ? 'Ecke 90°' : 'Gerade Mauer',
-    `Verband: ${aktiverVerband().name}`,
+    verband.name,
+    verband.bauweise,
     `Mauerdicke ${zahlFmt(mauer.tiefe / 10, 0)} cm`,
     `Stoßfuge ${k.fuge} mm / Lagerfuge ${k.lagenfuge} mm`,
     new Date().toLocaleDateString('de-DE'),
-  ].join(' · ');
+  ].filter(Boolean).join(' · ');
 }
 
 function zeigeFehler(fehler) {
@@ -459,7 +508,7 @@ export function rendere() {
   if (fehler.length) return;
 
   const mauer = baueMauer(state.konfig, verband, katalog);
-  const kalk = kalkuliere(mauer, katalog, state.konfig);
+  const kalk = kalkuliere(mauer, katalog, state.konfig, verband);
 
   renderKennzahlen(mauer, kalk);
   $('#draufsicht').innerHTML = zeichneDraufsicht(mauer);

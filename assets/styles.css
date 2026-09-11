@@ -165,13 +165,33 @@ legend, .details > summary {
 
 .lagen-editor { list-style: none; margin: .6rem 0 0; padding: 0; }
 .lagen-editor li {
-  display: grid;
-  grid-template-columns: 3.6rem 1fr 2rem;
+  padding: .4rem .5rem;
+  margin-bottom: .4rem;
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  background: var(--papier);
+}
+.band-kopf {
+  display: flex;
   gap: .4rem;
   align-items: center;
-  margin-bottom: .35rem;
+  justify-content: space-between;
 }
-.lagen-nr { font-size: .8rem; color: var(--text-leise); }
+.band-kopf select { padding: .15rem .3rem; font-size: .8rem; }
+.band-kopf button { padding: .1rem .4rem; line-height: 1; }
+.band-feld {
+  display: grid;
+  grid-template-columns: 3.6rem 1fr;
+  gap: .4rem;
+  align-items: center;
+  margin-top: .3rem;
+  font-size: .82rem;
+}
+.band-feld > span { color: var(--text-leise); }
+.band-feld input { width: 100%; min-width: 0; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: .8rem; }
+.band-feld input:invalid { border-color: var(--warnung); background: #fdf3f0; }
+.lagen-nr { font-size: .8rem; color: var(--text-leise); font-weight: 600; }
+code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: .92em; }
 .editor-aktionen { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .7rem; }
 .editor-aktionen button { font-size: .82rem; }
 
@@ -245,6 +265,7 @@ legend, .details > summary {
 .tabelle th:first-child, .tabelle td:first-child,
 .tabelle th:nth-child(2), .tabelle td:nth-child(2) { text-align: left; }
 .tabelle thead th { color: var(--text-leise); font-weight: 600; font-size: .78rem; }
+.tabelle td:not(:last-child), .tabelle th:not(:last-child) { white-space: nowrap; }
 .tabelle tfoot td { font-weight: 600; border-top: 2px solid var(--linie); border-bottom: none; }
 .tabelle tbody tr:hover { background: #faf6ef; }
 

@@ -1,8 +1,9 @@
-# Mauer-Konfigurator · EHL Antik-Serie
+# Mauer-Konfigurator · EHL CityAntik-Mauer (Aufbauschema 6016)
 
-Planungswerkzeug für Gartenmauern aus der EHL Antik-Serie: gerade Mauer oder
-Mauer mit 90°-Ecke, Verlegeart **6016**, Mauerplan mit Ansicht und Draufsicht,
-Höhen- und Schnittberechnung sowie die Kalkulation der benötigten Steine.
+Planungswerkzeug für Gartenmauern nach dem **EHL-Verlegebeispiel 6016**
+(CityAntik-Mauer, „Wilder Aufbau mit 4 Formaten“, DIY): gerade Mauer oder
+Mauer mit 90°-Ecke, Mauerplan mit Ansicht und Draufsicht, Höhen- und
+Schnittberechnung sowie die Kalkulation der benötigten Steine.
 Die Anwendung läuft vollständig im Browser, speichert Pläne im Browser-Speicher
 und lässt sich direkt ausdrucken.
 
@@ -29,71 +30,85 @@ npm run build      # erzeugt dist/mauer-konfigurator.html
 |---|---|
 | Mauer auf bestimmte Länge planen | Länge je Schenkel in cm (Außenkante) |
 | 90°-Ecke | Mauerform „Ecke“ mit zwei Schenkeln und wechselseitiger Eckverzahnung |
-| Verbandart auswählen | Vorlage „Verlegeart 6016“, eigene Verbände speicherbar |
-| Oberste/unterste Lage bestimmen | je Lage: aus dem Verband, Verbandlage *ersetzen* oder *zusätzliche* Lage |
-| Höhe je Schenkel berechnen | aus Lagenzahl oder aus Zielhöhe (mit Abweichungsangabe) |
-| Schnitte berechnen | Zuschnittliste je Lage, gruppiert und einzeln, mit Reststückverwertung |
-| Steinkalkulation | Bedarf je Format, Bestellmenge inkl. Verschnitt, Fläche, Gewicht |
+| Verbandart auswählen | Vorlage „Aufbauschema 6016“, eigene Verbände speicherbar |
+| Oberstes/unterstes Band bestimmen | aus dem Verband, Verbandband *ersetzen* oder *zusätzliches* Band |
+| Höhe je Schenkel berechnen | aus Bandzahl oder aus Zielhöhe (mit Abweichungsangabe) |
+| Schnitte berechnen | Zuschnittliste je Band, gruppiert und einzeln, mit Reststückverwertung |
+| Steinkalkulation | Bedarf je Format, Bestellmenge inkl. Verschnitt, Stk/m² im Vergleich zum EHL-Richtwert, Fläche, Gewicht |
 | Browser-Speicher | Pläne speichern/laden/löschen, Entwurf überlebt den Reload, Export/Import als JSON |
 | Druckfunktion | eigenes Drucklayout (A4 quer) mit Plankopf, Zeichnungen und Tabellen |
+
+## Datengrundlage: EHL-Verlegebeispiel 6016
+
+Steinformate (`src/data/catalog.js`) und Aufbau (`src/data/patterns.js`) stammen
+aus dem EHL-Datenblatt „Aufbauschema Nr. 6016 – CityAntik-Mauer“:
+
+| | Format (L × T × H) | Systemverband | DIY-Ausschnitt |
+|---|---|---|---|
+| Stein 1 | 40 × 20 × 14 cm | ca. 4,0 Stk/m² | ca. 3,7 Stk/m² |
+| Stein 2 | 30 × 20 × 14 cm | ca. 4,0 Stk/m² | ca. 4,4 Stk/m² |
+| Stein 3 | 30 × 20 × 7 cm | ca. 15,9 Stk/m² | ca. 16,0 Stk/m² |
+| Stein 4 | 20 × 20 × 7 cm | ca. 19,9 Stk/m² | ca. 19,7 Stk/m² |
+
+Der Aufbau wurde aus der maßstäblichen Zeichnung des Datenblatts (Ausschnitt
+340 × 84 cm, 124 Steine) rekonstruiert: **acht Bänder** mit den Höhen
+7/14/7/14/7/14/7/14 cm (= 84 cm) und einer **Horizontalperiode von 120 cm**.
+Die 14-cm-Bänder mischen 40er- und 30er-Steine mit 50 cm breiten Feldern aus je
+zwei übereinanderliegenden Reihen 7-cm-Steinen – daher „wilder Aufbau“.
+
+`test/verband6016.test.js` vergleicht den erzeugten Mauerplan Feld für Feld mit
+der Zeichnung des Datenblatts (395 Rasterfelder, Raster 10 × 7 cm) und prüft den
+Steinbedarf je m² gegen die EHL-Richtwerte.
 
 ## Rechenmodell
 
 Intern wird durchgängig in **Millimetern** gerechnet; Eingaben und Ausgaben
 erfolgen in cm.
 
-**Steinformate (EHL Antik, `src/data/catalog.js`)**
+**Verband.** Ein Verband besteht aus Bändern, die von unten nach oben wiederholt
+werden. Jedes Band hat eine feste Höhe (7 oder 14 cm) und besteht aus Elementen:
+einem Stein über die volle Bandhöhe oder einem Feld aus zwei übereinander
+liegenden Reihen 7-cm-Steine. `anfang` wird einmalig an der Ecke verlegt,
+`muster` wiederholt sich bis zum freien Ende – genau dadurch versetzen sich die
+Stoßfugen von Band zu Band.
 
-| Format | L × T × H |
-|---|---|
-| S | 20 × 20 × 7 cm |
-| M | 30 × 20 × 7 cm |
-| L | 20 × 20 × 14 cm |
-| XL | 30 × 20 × 14 cm |
-| XXL | 40 × 20 × 14 cm |
-
-**Verband.** Ein Verband ist eine Folge von Lagen, jede Lage eine Folge von
-Steinformaten. Die Steinfolge wird je Lage wiederholt, bis die Schenkellänge
-erreicht ist; der Verband selbst wiederholt sich über die Lagen. Innerhalb
-einer Lage müssen alle Formate dieselbe Höhe haben – die Anwendung prüft das.
-
-**Ecke.** Die Schenkel verzahnen sich lagenweise: in Lage 1 läuft Schenkel A bis
+**Ecke.** Die Schenkel verzahnen sich bandweise: in Band 1 läuft Schenkel A bis
 zur Außenkante durch und Schenkel B beginnt um die Mauerdicke (20 cm) versetzt,
-in Lage 2 umgekehrt. Dadurch stoßen die Lagerfugen nicht durchgehend aufeinander.
-Verlegt wird in der Zeichnung immer **von der Ecke zum freien Ende**, der
-Zuschnitt fällt also am freien Ende an. Hat ein Schenkel mehr Lagen als der
-andere, entfällt die Verzahnung oberhalb des kürzeren Schenkels.
+in Band 2 umgekehrt. Verlegt wird in der Zeichnung immer **von der Ecke zum
+freien Ende**, der Zuschnitt fällt also am freien Ende an. Hat ein Schenkel mehr
+Bänder als der andere, entfällt die Verzahnung oberhalb des kürzeren Schenkels.
 
-**Höhe.** Die Höhe ergibt sich aus der Summe der Lagenhöhen plus Lagerfugen.
-Wird eine Zielhöhe vorgegeben, wählt die Anwendung die Lagenzahl mit der
-kleinsten Abweichung und weist diese Abweichung aus.
+**Höhe.** Die Höhe ergibt sich aus der Summe der Bandhöhen plus Lagerfugen.
+Wird eine Zielhöhe vorgegeben, wählt die Anwendung die Bandzahl mit der
+kleinsten Abweichung (bei gleichem Abstand die größere Höhe) und weist die
+Abweichung aus. Erreichbare Höhen sind 7, 21, 28, 42, 49, 63, 70, 84 cm usw.
 
-**Zuschnitte.** Der letzte Stein einer Lage wird auf das Restmaß geschnitten.
-Wäre dieses Reststück kleiner als das eingestellte kleinste Passstück
-(Standard 60 mm), werden die beiden letzten Steine gleichmäßig aufgeteilt,
-damit kein Splitter am Mauerende steht.
+**Zuschnitte.** Der letzte Stein eines Bandes wird auf das Restmaß geschnitten;
+angeschnittene Felder werden in beiden Reihen gekürzt. Wäre ein Reststück
+kleiner als das eingestellte kleinste Passstück (Standard 60 mm), werden die
+beiden letzten Steine derselben Reihe gleichmäßig aufgeteilt – sofern sie
+unmittelbar nebeneinander liegen.
 
 **Reststücke.** Auf Wunsch werden Abschnitte wiederverwendet (Best-Fit, nur bei
-gleicher Lagenhöhe und Tiefe, abzüglich Schnittfugenverlust). Ein Zuschnitt aus
+gleicher Steinhöhe und Tiefe, abzüglich Schnittfugenverlust). Ein Zuschnitt aus
 einem Reststück verbraucht keinen neuen Stein; die Ersparnis wird ausgewiesen.
 
 **Gewicht** ist eine rechnerische Schätzung (Volumen × 2350 kg/m³), keine
 Herstellerangabe.
 
-## Verbandarten
+## Verbandarten anpassen
 
-Die mitgelieferte Vorlage „Verlegeart 6016“ liegt in
-`src/data/patterns.js`. Über **Verband bearbeiten** lässt sich die Lagenfolge
-im Browser ändern (Formate je Lage durch Leerzeichen getrennt), als eigener
-Verband speichern und wiederverwenden. Eine Änderung ohne Speichern gilt nur
-für den aktuellen Plan und wird mit ihm gesichert.
+Über **Verband bearbeiten** lässt sich jedes Band im Browser ändern und als
+eigener Verband speichern. Die Elemente werden als Text geschrieben:
 
-> **Datenherkunft:** Die Steinformate entsprechen der handelsüblichen
-> Staffelung der EHL Antik-Mauersteine. Die Lagenfolge der Verlegeart 6016 ist
-> als Vorlage hinterlegt – das offizielle EHL-Verlegebeispiel war beim Erstellen
-> nicht abrufbar. Bitte einmal gegen das EHL-Datenblatt prüfen und bei Bedarf im
-> Verband-Editor korrigieren; alle Berechnungen ziehen die Werte aus den Daten,
-> nicht aus dem Code. Maßgeblich bleiben in jedem Fall die Herstellerangaben.
+```
+40/14 30/14 [20/7 30/7 | 30/7 20/7]
+```
+
+Formate sind `40/14`, `30/14`, `30/7`, `20/7` (Länge/Höhe in cm). Eckige
+Klammern beschreiben ein gestapeltes Feld aus 7-cm-Steinen, der senkrechte
+Strich trennt untere und obere Reihe. Eine Änderung ohne Speichern gilt nur für
+den aktuellen Plan und wird mit ihm gesichert.
 
 ## Aufbau
 
@@ -101,8 +116,8 @@ für den aktuellen Plan und wird mit ihm gesichert.
 index.html                    Oberfläche
 assets/styles.css             Bildschirm- und Drucklayout
 src/data/catalog.js           Steinformate der Serie
-src/data/patterns.js          Verbandarten (Vorlage 6016)
-src/core/wall.js              Lagenfolge, Höhen, Eckverzahnung, Lagenfüllung
+src/data/patterns.js          Verbandarten (Aufbauschema 6016) und Textform
+src/core/wall.js              Bandfolge, Höhen, Eckverzahnung, Bandfüllung
 src/core/calc.js              Schnittliste, Reststücke, Steinbedarf
 src/ui/svg.js                 Mauerplan als SVG (Ansicht, Draufsicht, Legende)
 src/ui/app.js                 Bedienung, Zustand, Ausgabe
@@ -117,12 +132,17 @@ test/                         Tests (node:test, ohne Abhängigkeiten)
 npm test
 ```
 
-Abgedeckt sind Lagenfolge und Abschlusslagen, Höhenermittlung, Lagenfüllung mit
-Fugen und Passstück-Aufteilung, Eckverzahnung, Schnitt- und Reststücklogik,
-Steinbedarf mit Verschnittzuschlag sowie der Einzeldatei-Build.
+Abgedeckt sind der Abgleich mit der Datenblatt-Zeichnung, Bandfolge und
+Abschlussbänder, Höhenermittlung, Bandfüllung mit Fugen, gestapelten Feldern und
+Passstück-Aufteilung, Eckverzahnung, Schnitt- und Reststücklogik, Steinbedarf
+mit Verschnittzuschlag sowie der Einzeldatei-Build.
 
 ## Speicherung
 
 Pläne liegen im `localStorage` des jeweiligen Browsers – sie sind an Gerät und
 Browserprofil gebunden und werden beim Löschen der Browserdaten mit entfernt.
 Für Sicherung und Weitergabe gibt es **Export**/**Import** als JSON-Datei.
+
+---
+
+Maße ohne Gewähr – maßgeblich sind die Angaben des Herstellers.

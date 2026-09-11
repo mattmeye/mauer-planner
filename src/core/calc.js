@@ -4,14 +4,15 @@
  * Alle Laengen in mm. Grundlage ist das Ergebnis von `baueMauer`.
  */
 
-import { gewichtKg } from '../data/catalog.js';
+import { gewichtKg, formatText } from '../data/catalog.js';
 
 /**
  * @param {object} mauer   Ergebnis von baueMauer()
  * @param {object} katalog Steinkatalog als Map
  * @param {object} cfg     Konfiguration (restnutzung, minRest, saegeblatt, verschnitt)
+ * @param {object} [verband] Verband - liefert die Richtwerte des Datenblatts
  */
-export function kalkuliere(mauer, katalog, cfg) {
+export function kalkuliere(mauer, katalog, cfg, verband = null) {
   const restnutzung = cfg.restnutzung !== false;
   const minRest = cfg.minRest ?? 100;
   const saegeblatt = cfg.saegeblatt ?? 0;
@@ -103,15 +104,22 @@ export function kalkuliere(mauer, katalog, cfg) {
       return {
         ...e,
         name: format.name,
-        format: `${format.l / 10} x ${format.d / 10} x ${format.h / 10} cm`,
+        format: formatText(format),
         bestellmenge: zuschlag,
         gewicht: gewichtKg(format) * e.verbrauch,
+        richtwertSystem: verband?.bedarfSystem?.[e.steinId] ?? null,
+        richtwertDiy: verband?.bedarfJeQm?.[e.steinId] ?? null,
       };
     })
-    .sort((a, b) => a.steinId.localeCompare(b.steinId));
+    .sort((a, b) => (katalog[a.steinId]?.nr ?? 99) - (katalog[b.steinId]?.nr ?? 99));
 
   const flaeche = schenkelStats.reduce((s, x) => s + x.flaeche, 0);
   const laufmeter = mauer.schenkel.reduce((s, x) => s + x.laenge / 1000, 0);
+
+  // Tatsächlicher Bedarf je m² Ansichtsfläche (Vergleich mit dem Datenblatt).
+  for (const p of positionen) {
+    p.jeQm = flaeche > 0 ? (p.ganz + p.zuschnitte) / flaeche : 0;
+  }
 
   return {
     schenkel: schenkelStats,
