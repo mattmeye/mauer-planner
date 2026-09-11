@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mauer-Konfigurator &middot; EHL Antik</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f7f3ec'/%3E%3Cg fill='%23bd9f74' stroke='%234a4034' stroke-width='1'%3E%3Crect x='3' y='6' width='12' height='7'/%3E%3Crect x='17' y='6' width='12' height='7'/%3E%3Crect x='3' y='15' width='8' height='7'/%3E%3Crect x='13' y='15' width='16' height='7'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header class="kopf no-print">
+  <div class="kopf-titel">
+    <h1>Mauer-Konfigurator</h1>
+    <p>EHL Antik-Serie &middot; Verlegeart 6016</p>
+  </div>
+  <div class="kopf-aktionen">
+    <select id="planListe" aria-label="Gespeicherte Plaene"></select>
+    <button type="button" id="btnLaden">Laden</button>
+    <button type="button" id="btnSpeichern" class="primaer">Speichern</button>
+    <button type="button" id="btnSpeichernAls">Als neu speichern</button>
+    <button type="button" id="btnLoeschen">L&ouml;schen</button>
+    <button type="button" id="btnNeu">Neuer Plan</button>
+    <button type="button" id="btnExport">Export</button>
+    <button type="button" id="btnImport">Import</button>
+    <input type="file" id="dateiImport" accept="application/json,.json" hidden>
+    <button type="button" id="btnDrucken" class="primaer">Mauerplan drucken</button>
+  </div>
+</header>
+
+<p id="hinweis" class="hinweis no-print" hidden></p>
+
+<main class="layout">
+
+  <form id="formular" class="steuerung no-print" autocomplete="off">
+
+    <fieldset>
+      <legend>Plan</legend>
+      <label class="feld feld--breit">
+        <span>Bezeichnung</span>
+        <input type="text" id="planName" maxlength="80">
+      </label>
+      <label class="feld feld--breit">
+        <span>Mauerform</span>
+        <select id="form">
+          <option value="ecke">Ecke &ndash; zwei Schenkel im 90&deg;-Winkel</option>
+          <option value="gerade">Gerade Mauer &ndash; ein Schenkel</option>
+        </select>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Verbandart</legend>
+      <label class="feld feld--breit">
+        <span>Verlegeart</span>
+        <select id="verbandId"></select>
+      </label>
+      <p class="beschreibung" id="verbandBeschreibung"></p>
+      <button type="button" id="btnVerbandEditor" class="leise">Verband bearbeiten</button>
+      <div id="verbandEditor" class="editor" hidden></div>
+      <label class="feld">
+        <span>Startlage im Verband</span>
+        <input type="number" id="startLage" min="0" max="20" step="1">
+      </label>
+    </fieldset>
+
+    <fieldset id="schenkelFelder">
+      <legend>Schenkel</legend>
+      <div class="schenkel" data-schenkel="0">
+        <h4>Schenkel A</h4>
+        <label class="feld">
+          <span>Bezeichnung</span>
+          <input type="text" data-feld="name" maxlength="40">
+        </label>
+        <label class="feld">
+          <span>L&auml;nge Au&szlig;enkante (cm)</span>
+          <input type="number" data-feld="laenge" min="20" max="10000" step="0.5">
+        </label>
+        <label class="feld">
+          <span>H&ouml;he festlegen &uuml;ber</span>
+          <select data-feld="modus">
+            <option value="hoehe">Zielh&ouml;he (cm)</option>
+            <option value="lagen">Lagenzahl</option>
+          </select>
+        </label>
+        <label class="feld">
+          <span data-rolle="wertLabel">Zielh&ouml;he (cm)</span>
+          <input type="number" data-feld="wert" min="1" step="0.5">
+        </label>
+      </div>
+      <div class="schenkel" data-schenkel="1">
+        <h4>Schenkel B</h4>
+        <label class="feld">
+          <span>Bezeichnung</span>
+          <input type="text" data-feld="name" maxlength="40">
+        </label>
+        <label class="feld">
+          <span>L&auml;nge Au&szlig;enkante (cm)</span>
+          <input type="number" data-feld="laenge" min="20" max="10000" step="0.5">
+        </label>
+        <label class="feld">
+          <span>H&ouml;he festlegen &uuml;ber</span>
+          <select data-feld="modus">
+            <option value="hoehe">Zielh&ouml;he (cm)</option>
+            <option value="lagen">Lagenzahl</option>
+          </select>
+        </label>
+        <label class="feld">
+          <span data-rolle="wertLabel">Zielh&ouml;he (cm)</span>
+          <input type="number" data-feld="wert" min="1" step="0.5">
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Abschlusslagen</legend>
+      <div class="abschluss" data-abschluss="unten">
+        <h4>Unterste Lage</h4>
+        <label class="feld">
+          <span>Modus</span>
+          <select data-feld="modus">
+            <option value="verband">aus dem Verband</option>
+            <option value="ersetzen">Verbandlage ersetzen</option>
+            <option value="zusaetzlich">zus&auml;tzliche Lage</option>
+          </select>
+        </label>
+        <label class="feld">
+          <span>Steinfolge</span>
+          <select data-feld="stein"></select>
+        </label>
+      </div>
+      <div class="abschluss" data-abschluss="oben">
+        <h4>Oberste Lage</h4>
+        <label class="feld">
+          <span>Modus</span>
+          <select data-feld="modus">
+            <option value="verband">aus dem Verband</option>
+            <option value="ersetzen">Verbandlage ersetzen</option>
+            <option value="zusaetzlich">zus&auml;tzliche Lage</option>
+          </select>
+        </label>
+        <label class="feld">
+          <span>Steinfolge</span>
+          <select data-feld="stein"></select>
+        </label>
+      </div>
+    </fieldset>
+
+    <details class="details">
+      <summary>Fugen, Zuschnitt und Zuschlag</summary>
+      <label class="feld">
+        <span>Sto&szlig;fuge (mm)</span>
+        <input type="number" id="fuge" min="0" max="30" step="1">
+      </label>
+      <label class="feld">
+        <span>Lagerfuge (mm)</span>
+        <input type="number" id="lagenfuge" min="0" max="30" step="1">
+      </label>
+      <label class="feld">
+        <span>Kleinstes Passst&uuml;ck (mm)</span>
+        <input type="number" id="minStueck" min="0" max="400" step="10">
+      </label>
+      <label class="feld">
+        <span>Schnittfugenverlust (mm)</span>
+        <input type="number" id="saegeblatt" min="0" max="20" step="1">
+      </label>
+      <label class="feld feld--check">
+        <input type="checkbox" id="restnutzung">
+        <span>Rest&shy;st&uuml;cke wiederverwenden</span>
+      </label>
+      <label class="feld">
+        <span>Mindestl&auml;nge Reststück (mm)</span>
+        <input type="number" id="minRest" min="0" max="400" step="10">
+      </label>
+      <label class="feld">
+        <span>Verschnittzuschlag (%)</span>
+        <input type="number" id="verschnitt" min="0" max="30" step="1">
+      </label>
+    </details>
+
+    <details class="details">
+      <summary>Hinweise zu den Daten</summary>
+      <p class="beschreibung">
+        Steinformate der EHL Antik-Serie: 20/30/40 cm L&auml;nge, 20 cm Tiefe,
+        7 bzw. 14 cm H&ouml;he. Die Lagenfolge der Verlegeart 6016 ist als
+        Vorlage hinterlegt und l&auml;sst sich &uuml;ber <em>Verband bearbeiten</em>
+        an das EHL-Verlegebeispiel anpassen und als eigener Verband speichern.
+        Gewichtsangaben sind rechnerische Sch&auml;tzungen
+        (Volumen &times; 2350 kg/m&sup3;). Ma&szlig;geblich bleiben die
+        Herstellerangaben.
+      </p>
+    </details>
+
+  </form>
+
+  <section class="ergebnis" id="ergebnis">
+    <div class="druckkopf">
+      <h2 id="druckTitel">Mauerplan</h2>
+      <p id="druckMeta"></p>
+    </div>
+    <div id="fehler" class="fehler" hidden></div>
+    <div id="kennzahlen" class="kennzahlen"></div>
+
+    <section class="block">
+      <h3>Draufsicht</h3>
+      <div id="draufsicht" class="zeichnung"></div>
+    </section>
+
+    <div id="ansichten"></div>
+
+    <section class="block">
+      <h3>Steinbedarf</h3>
+      <div id="bedarf"></div>
+      <div id="legendeBox"></div>
+    </section>
+
+    <section class="block">
+      <h3>Schnittliste</h3>
+      <div id="schnitte"></div>
+    </section>
+
+    <section class="block" id="resteBlock">
+      <h3>Verwertbare Rest&shy;st&uuml;cke</h3>
+      <div id="reste"></div>
+    </section>
+
+    <section class="block seitenumbruch">
+      <h3>Lagenaufbau</h3>
+      <div id="lagenTabelle"></div>
+    </section>
+
+    <p class="druckfuss">
+      Erstellt mit dem Mauer-Konfigurator. Ma&szlig;e ohne Gew&auml;hr &ndash;
+      ma&szlig;geblich sind die Angaben des Herstellers.
+    </p>
+  </section>
+
+</main>
+
+<script type="module" src="src/ui/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+/* Mauer-Konfigurator - Bildschirm- und Druckdarstellung */
+
+:root {
+  --sand: #f7f3ec;
+  --papier: #ffffff;
+  --linie: #ddd3c4;
+  --text: #33291d;
+  --text-leise: #7d7264;
+  --akzent: #8a5a2b;
+  --akzent-hell: #f0e3d2;
+  --warnung: #a23b26;
+  --radius: 10px;
+  --schatten: 0 1px 2px rgba(51, 41, 29, .08), 0 6px 18px rgba(51, 41, 29, .06);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--sand);
+  color: var(--text);
+  font: 15px/1.5 "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+h1, h2, h3, h4 { margin: 0 0 .4em; line-height: 1.25; font-weight: 600; }
+h1 { font-size: 1.35rem; }
+h3 { font-size: 1.05rem; }
+h4 { font-size: .95rem; }
+
+/* ------------------------------------------------------------------ Kopf */
+
+.kopf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: .9rem 1.4rem;
+  background: var(--papier);
+  border-bottom: 1px solid var(--linie);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.kopf-titel p { margin: 0; color: var(--text-leise); font-size: .85rem; }
+
+.kopf-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  align-items: center;
+}
+
+button, select, input[type="text"], input[type="number"] {
+  font: inherit;
+  color: inherit;
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  background: var(--papier);
+  padding: .4rem .6rem;
+}
+
+button {
+  cursor: pointer;
+  background: #f2ece2;
+}
+button:hover { background: var(--akzent-hell); }
+button.primaer { background: var(--akzent); border-color: var(--akzent); color: #fff; }
+button.primaer:hover { background: #74491f; }
+button.leise { background: transparent; border-style: dashed; color: var(--text-leise); }
+
+.hinweis {
+  margin: 0;
+  padding: .6rem 1.4rem;
+  background: #e8f0e4;
+  border-bottom: 1px solid var(--linie);
+  font-size: .9rem;
+}
+.hinweis[data-art="warnung"] { background: #f8e6e1; color: var(--warnung); }
+
+/* ---------------------------------------------------------------- Layout */
+
+.layout {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 1.2rem;
+  align-items: start;
+  padding: 1.2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 940px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ------------------------------------------------------------- Steuerung */
+
+.steuerung {
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+  position: sticky;
+  top: 4.6rem;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+}
+
+@media (max-width: 940px) {
+  .steuerung { position: static; max-height: none; }
+}
+
+fieldset, .details {
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--papier);
+  padding: .8rem .9rem 1rem;
+  margin: 0;
+  box-shadow: var(--schatten);
+}
+
+legend, .details > summary {
+  font-weight: 600;
+  font-size: .8rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--akzent);
+}
+.details > summary { cursor: pointer; list-style-position: inside; }
+.details[open] > summary { margin-bottom: .6rem; }
+
+.feld {
+  display: grid;
+  grid-template-columns: 1fr 7.5rem;
+  gap: .5rem;
+  align-items: center;
+  margin-top: .5rem;
+  font-size: .9rem;
+}
+.feld--breit { grid-template-columns: 1fr; }
+.feld--breit > span { color: var(--text-leise); font-size: .82rem; }
+.feld--check { grid-template-columns: auto 1fr; }
+.feld input, .feld select { width: 100%; min-width: 0; }
+.feld--check input { width: auto; }
+
+.schenkel, .abschluss {
+  padding-top: .6rem;
+  margin-top: .6rem;
+  border-top: 1px dashed var(--linie);
+}
+.schenkel:first-of-type, .abschluss:first-of-type { border-top: none; margin-top: 0; }
+
+.beschreibung { margin: .6rem 0 0; font-size: .82rem; color: var(--text-leise); }
+
+/* --------------------------------------------------------- Verband-Editor */
+
+.editor {
+  margin-top: .7rem;
+  padding: .7rem;
+  border: 1px dashed var(--linie);
+  border-radius: var(--radius);
+  background: #fbf8f3;
+}
+
+.lagen-editor { list-style: none; margin: .6rem 0 0; padding: 0; }
+.lagen-editor li {
+  display: grid;
+  grid-template-columns: 3.6rem 1fr 2rem;
+  gap: .4rem;
+  align-items: center;
+  margin-bottom: .35rem;
+}
+.lagen-nr { font-size: .8rem; color: var(--text-leise); }
+.editor-aktionen { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .7rem; }
+.editor-aktionen button { font-size: .82rem; }
+
+/* --------------------------------------------------------------- Ausgabe */
+
+.ergebnis { display: flex; flex-direction: column; gap: 1.2rem; min-width: 0; }
+
+.druckkopf { display: none; }
+
+.fehler {
+  border: 1px solid var(--warnung);
+  border-radius: var(--radius);
+  background: #fbeae5;
+  color: var(--warnung);
+  padding: .7rem .9rem;
+}
+.fehler p { margin: .2rem 0; }
+
+.kennzahlen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: .8rem;
+}
+
+.karte {
+  background: var(--papier);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  padding: .8rem .9rem;
+  box-shadow: var(--schatten);
+}
+.karte--summe { background: #fbf6ee; border-color: #e0cfb4; }
+.karte h4 { color: var(--akzent); }
+.karte dl { margin: 0; display: grid; gap: .2rem; }
+.karte dl > div { display: flex; justify-content: space-between; gap: .6rem; font-size: .88rem; }
+.karte dt { color: var(--text-leise); }
+.karte dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+.abweichung { display: block; font-size: .78rem; color: var(--text-leise); }
+
+.block {
+  background: var(--papier);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  padding: .9rem 1rem 1.1rem;
+  box-shadow: var(--schatten);
+}
+.block h3 { color: var(--akzent); }
+.block h4 { margin-top: 1rem; }
+
+.zeichnung { overflow-x: auto; }
+.plan-svg { display: block; width: 100%; height: auto; background: #fdfbf7; }
+.plan-svg--draufsicht {
+  width: auto;
+  max-width: min(100%, 620px);
+  max-height: 420px;
+  margin: 0 auto;
+}
+
+.tabelle {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .86rem;
+  margin-top: .5rem;
+}
+.tabelle th, .tabelle td {
+  border-bottom: 1px solid var(--linie);
+  padding: .35rem .5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tabelle th:first-child, .tabelle td:first-child,
+.tabelle th:nth-child(2), .tabelle td:nth-child(2) { text-align: left; }
+.tabelle thead th { color: var(--text-leise); font-weight: 600; font-size: .78rem; }
+.tabelle tfoot td { font-weight: 600; border-top: 2px solid var(--linie); border-bottom: none; }
+.tabelle tbody tr:hover { background: #faf6ef; }
+
+.zuschnitt { color: var(--warnung); white-space: nowrap; }
+.leise-text { color: var(--text-leise); font-size: .8em; }
+
+.legende { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; padding: 0; margin: .8rem 0 0; font-size: .82rem; }
+.legende li { display: flex; align-items: center; gap: .4rem; }
+.swatch {
+  width: 1.1rem; height: .8rem; border: 1px solid #4a4034; border-radius: 2px; display: inline-block;
+}
+.swatch--schnitt {
+  background: repeating-linear-gradient(45deg, #f0cfc6 0 3px, #d79b8b 3px 5px);
+}
+
+.druckfuss { display: none; }
+
+/* ----------------------------------------------------------------- Druck */
+
+@media print {
+  @page { size: A4 landscape; margin: 12mm; }
+
+  body { background: #fff; font-size: 10pt; }
+  .no-print, .kopf, .steuerung, .hinweis { display: none !important; }
+  .layout { display: block; padding: 0; max-width: none; }
+  .ergebnis { gap: .6rem; }
+
+  .druckkopf {
+    display: block;
+    border-bottom: 2px solid var(--text);
+    padding-bottom: .3rem;
+    margin-bottom: .6rem;
+  }
+  .druckkopf h2 { font-size: 14pt; margin: 0; }
+  .druckkopf p { margin: .2rem 0 0; font-size: 9pt; color: #444; }
+
+  .block, .karte {
+    box-shadow: none;
+    border: 1px solid #bbb;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .kennzahlen { grid-template-columns: repeat(3, 1fr); gap: .4rem; }
+  .seitenumbruch { break-before: page; page-break-before: always; }
+
+  .details { border: none; padding: 0; box-shadow: none; }
+  .details > summary { display: none; }
+  .details[open] > *, .details > * { display: revert; }
+
+  .tabelle { font-size: 8.5pt; }
+  .tabelle tbody tr:hover { background: none; }
+  .plan-svg { background: #fff; }
+  .plan-svg--draufsicht { max-height: 72mm; }
+  .zeichnung { overflow: visible; }
+
+  .druckfuss {
+    display: block;
+    font-size: 8pt;
+    color: #666;
+    border-top: 1px solid #bbb;
+    padding-top: .3rem;
+  }
+}
