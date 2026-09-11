@@ -1,0 +1,13 @@
+{
+  "name": "mauer-planner",
+  "version": "1.0.0",
+  "description": "Mauer-Konfigurator fuer die EHL Antik-Serie: Verband 6016, Eckplanung, Mauerplan, Schnittliste und Steinkalkulation.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node --test test/*.test.js",
+    "build": "node tools/build-single-file.mjs"
+  },
+  "license": "MIT"
+}
