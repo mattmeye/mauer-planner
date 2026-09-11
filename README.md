@@ -7,7 +7,20 @@ Schnittberechnung sowie die Kalkulation der benötigten Steine.
 Die Anwendung läuft vollständig im Browser, speichert Pläne im Browser-Speicher
 und lässt sich direkt ausdrucken.
 
-## Starten
+## Online nutzen
+
+Das Repository ist so aufgebaut, dass es direkt über **GitHub Pages** läuft –
+alle Pfade sind relativ, es gibt keine externen Abhängigkeiten und keinen
+Build-Schritt. Einmalig unter *Settings → Pages* einstellen:
+
+> **Source:** Deploy from a branch · **Branch:** `main` · **Ordner:** `/ (root)`
+
+Danach ist der Konfigurator unter
+`https://<benutzer>.github.io/mauer-planner/` erreichbar und jeder Push auf
+`main` veröffentlicht die neue Fassung. Die Pläne liegen im Browser-Speicher
+des jeweiligen Besuchers – die Seite selbst speichert nichts.
+
+## Lokal starten
 
 ```bash
 npm start          # startet einen lokalen Server auf http://localhost:8080
@@ -130,6 +143,7 @@ src/ui/app.js                 Bedienung, Zustand, Ausgabe
 src/store.js                  Browser-Speicher (Pläne, Verbände, Entwurf)
 tools/build-single-file.mjs   Einzeldatei-Build
 dist/mauer-konfigurator.html  fertige Einzeldatei (erzeugt, eingecheckt)
+.nojekyll                     GitHub Pages liefert die Dateien unverändert aus
 test/                         Tests (node:test, ohne Abhängigkeiten)
 ```
 
