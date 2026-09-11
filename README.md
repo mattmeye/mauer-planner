@@ -13,11 +13,17 @@ und lässt sich direkt ausdrucken.
 npm start          # startet einen lokalen Server auf http://localhost:8080
 ```
 
-Alternativ eine Einzeldatei bauen, die ohne Server per Doppelklick läuft:
+Alternativ die Einzeldatei **[`dist/mauer-konfigurator.html`](dist/mauer-konfigurator.html)**
+verwenden: sie enthält Oberfläche, Stylesheet und Programmcode in einer Datei,
+läuft ohne Server per Doppelklick und lässt sich so weitergeben. Die Datei ist
+eingecheckt und wird neu erzeugt mit:
 
 ```bash
-npm run build      # erzeugt dist/mauer-konfigurator.html
+npm run build      # schreibt dist/mauer-konfigurator.html
 ```
+
+`npm test` baut sie ebenfalls neu und prüft sie; nach Änderungen am Quelltext
+also den Build mit einchecken.
 
 > Die Anwendung benötigt keine Abhängigkeiten. `npm start` nutzt nur
 > `python3 -m http.server`; jeder andere statische Webserver funktioniert ebenso.
@@ -123,6 +129,7 @@ src/ui/svg.js                 Mauerplan als SVG (Ansicht, Draufsicht, Legende)
 src/ui/app.js                 Bedienung, Zustand, Ausgabe
 src/store.js                  Browser-Speicher (Pläne, Verbände, Entwurf)
 tools/build-single-file.mjs   Einzeldatei-Build
+dist/mauer-konfigurator.html  fertige Einzeldatei (erzeugt, eingecheckt)
 test/                         Tests (node:test, ohne Abhängigkeiten)
 ```
 
